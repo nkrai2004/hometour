@@ -1,1 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HomeTour AI — MVP</title>
+<style>
+:root{--bg:#101419;--panel:#171d24;--panel2:#202833;--line:#303b48;--text:#eef3f8;--muted:#9eacbb;--accent:#b6f36b;--accent2:#d9ffad}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+header{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--line);background:#12171d}
+.brand{display:flex;align-items:center;gap:11px;font-size:17px;font-weight:750;letter-spacing:-.3px}.logo{width:34px;height:34px;border-radius:10px;background:var(--accent);color:#17200d;display:grid;place-items:center;font-weight:900;font-size:19px}
+.pill{border:1px solid #435039;background:#222b1d;color:var(--accent2);padding:5px 9px;border-radius:999px;font-size:11px;font-weight:700}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:calc(100vh - 68px)}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:18px;overflow:auto}.section{margin-bottom:22px}.section h3{font-size:11px;letter-spacing:1.15px;text-transform:uppercase;color:var(--muted);margin:0 0 11px}
+label{display:block;font-size:12px;color:#c9d2dc;margin:11px 0 5px}input,select{width:100%;background:#10151b;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px;font:inherit;outline:none}input:focus,select:focus{border-color:var(--accent)}input[type=file]{font-size:11px;padding:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:0;border-radius:9px;padding:11px 12px;font:inherit;font-weight:750;cursor:pointer;width:100%;background:var(--accent);color:#17200d}.btn.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.help{color:var(--muted);font-size:11px;margin-top:7px}.uploadbox{border:1px dashed #566273;border-radius:10px;padding:12px;background:#12171d}
+main{min-width:0;padding:18px;display:flex;flex-direction:column;gap:13px}.topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.title h1{font-size:22px;margin:0;letter-spacing:-.6px}.title p{margin:3px 0 0;color:var(--muted);font-size:12px}.actions{display:flex;gap:8px}.actions button{width:auto;padding:9px 12px}
+.stage{position:relative;min-height:480px;height:calc(100vh - 205px);max-height:850px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#dce3e8}
+#viewport{position:absolute;inset:0}#viewport canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;z-index:2;pointer-events:none}.hud.top{top:14px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:start;gap:10px}.hud.bottom{bottom:14px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:end;gap:10px}
+.hudcard{background:rgba(15,20,26,.84);border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(12px);padding:10px 12px;border-radius:10px;color:white}.hudcard strong{display:block;font-size:12px}.hudcard span{font-size:11px;color:#c2ccd7}
+.mode{display:flex;gap:5px;pointer-events:auto}.mode button{background:rgba(15,20,26,.85);border:1px solid #53606d;color:#e8edf2;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:11px}.mode button.active{background:var(--accent);color:#17200d;border-color:var(--accent)}
+#notice{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:330px;text-align:center;padding:16px 20px;border-radius:12px;background:rgba(16,20,25,.9);border:1px solid #4c5967;color:#fff;pointer-events:none}
+.statusbar{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:11px}
+#planPreview{max-width:100%;max-height:150px;display:none;margin-top:9px;border-radius:7px;border:1px solid var(--line);background:#fff}
+.kbd{display:inline-block;border:1px solid #65717e;border-radius:4px;padding:1px 4px;font-size:10px;color:#fff}
+@media(max-width:850px){.layout{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.section{margin:0}.stage{height:65vh;min-height:400px}header{padding:0 14px}main{padding:12px}}
+@media(max-width:540px){aside{display:block}aside .section{margin-bottom:20px}.title h1{font-size:19px}.stage{min-height:380px}.hud.bottom{align-items:end}.hudcard.hints{max-width:210px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">H</div><div>HomeTour AI <span style="font-weight:400;color:var(--muted);font-size:12px">/ Studio</span></div></div>
+  <div class="pill">STARTER PROTOTYPE</div>
+</header>
+<div class="layout">
+<aside>
+  <section class="section">
+    <h3>01 · Floor plan</h3>
+    <div class="uploadbox">
+      <label for="planFile" style="margin-top:0">Upload PDF / JPG / PNG</label>
+      <input id="planFile" type="file" accept=".pdf,image/png,image/jpeg,image/webp,application/pdf">
+      <img id="planPreview" alt="Uploaded floor plan preview">
+      <div class="help" id="fileInfo">Upload a plan for reference. This prototype does not automatically interpret its geometry yet.</div>
+    </div>
+  </section>
+  <section class="section">
+    <h3>02 · House dimensions</h3>
+    <div class="grid2">
+      <div><label for="houseW">Width (m)</label><input id="houseW" type="number" min="4" max="40" step=".5" value="12"></div>
+      <div><label for="houseD">Depth (m)</label><input id="houseD" type="number" min="4" max="40" step=".5" value="10"></div>
+      <div><label for="wallH">Ceiling (m)</label><input id="wallH" type="number" min="2.2" max="5" step=".1" value="3"></div>
+      <div><label for="wallT">Wall (m)</label><input id="wallT" type="number" min=".1" max=".5" step=".05" value=".2"></div>
+    </div>
+    <label for="finish">Interior finish</label>
+    <select id="finish"><option value="warm">Warm oak & ivory</option><option value="modern">Modern grey & white</option><option value="luxury">Luxury marble & brass</option></select>
+    <label for="layoutType">Demo room layout</label>
+    <select id="layoutType"><option value="family">Family home · 4 zones</option><option value="open">Open-plan living</option><option value="compact">Compact home</option></select>
+    <div class="help">These values generate a sample model. Use verified measurements before relying on the geometry.</div>
+    <button class="btn" id="buildBtn" style="margin-top:13px">Regenerate 3D home</button>
+  </section>
+  <section class="section">
+    <h3>03 · Walkthrough</h3>
+    <button class="btn secondary" id="walkBtn">Enter first-person tour</button>
+    <div class="help">Click the scene to lock the mouse. Move with <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>, look with mouse, press <span class="kbd">Esc</span> to exit.</div>
+    <button class="btn secondary" id="resetBtn" style="margin-top:9px">Reset viewpoint</button>
+  </section>
+  <section class="section">
+    <h3>Prototype limits</h3>
+    <div class="help">Floor-plan upload is currently a visual reference only. AI plan recognition, precise door/window placement, saved projects and production-grade collision detection are future implementation steps.</div>
+  </section>
+</aside>
+<main>
+  <div class="topline">
+    <div class="title"><h1>Your home, in 3D.</h1><p>Explore a sample interior and test the first-person tour workflow.</p></div>
+    <div class="actions"><button class="btn secondary" id="view3dBtn">3D overview</button><button class="btn" id="tourTopBtn">Start tour ↗</button></div>
+  </div>
+  <div class="stage">
+    <div id="viewport"></div>
+    <div class="hud top">
+      <div class="hudcard"><strong id="sceneName">Family home · Preview</strong><span id="sceneDims">12 m × 10 m · ceiling 3 m</span></div>
+      <div class="mode"><button id="orbitMode" class="active">Overview</button><button id="walkMode">Walk mode</button></div>
+    </div>
+    <div class="hud bottom">
+      <div class="hudcard hints"><strong id="modeLabel">3D overview</strong><span id="modeHelp">Drag to orbit · scroll to zoom</span></div>
+      <div class="hudcard"><strong id="areaLabel">120 m²</strong><span>Approx. gross footprint</span></div>
+    </div>
+    <div id="notice">Loading 3D scene…</div>
+  </div>
+  <div class="statusbar"><span id="status">Initialising renderer…</span><span>Demo geometry · Not construction documentation</span></div>
+</main>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
+import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/PointerLockControls.js';
 
+const $ = id => document.getElementById(id);
+const viewport = $('viewport');
+let scene, camera, renderer, orbit, pointer, houseGroup, floor, wallMeshes=[], keys={}, mode='overview', clock, yaw=0;
+const mats = {};
+function material(color, roughness=.8, metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness});}
+function setMaterials(){
+  const f=$('finish').value;
+  const palettes={
+    warm:{floor:0xc9a77b,wall:0xf2eee5,accent:0xb5c8ad,wood:0x926744,sofa:0xc2b6a3,metal:0x887a67},
+    modern:{floor:0xb6b9ba,wall:0xf4f5f5,accent:0x8d9ba5,wood:0x5f676c,sofa:0x737d86,metal:0x535b62},
+    luxury:{floor:0xe7e0d3,wall:0xf7f2e9,accent:0xb8a17a,wood:0x765a40,sofa:0xb5a58f,metal:0xb79b60}
+  };
+  Object.assign(mats,palettes[f]); 
+}
+function addBox(parent, name, x,y,z, sx,sy,sz, mat, cast=true){
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz), material(mat));
+  mesh.name=name;mesh.position.set(x,y,z);mesh.castShadow=cast;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+}
+function addFurniture(parent, cx,cz, roomW, roomD){
+  // Deliberately simplified illustrative furniture blocks, not dimensioned furniture.
+  const sw=Math.min(2.1,roomW*.36), sd=.85;
+  addBox(parent,'Sofa',cx-roomW*.12,.43,cz-roomD*.18,sw,.75,sd,mats.sofa);
+  addBox(parent,'Coffee table',cx-roomW*.12,.27,cz+roomD*.02,1.1,.12,.55,mats.wood);
+  addBox(parent,'Sideboard',cx+roomW*.31,.42,cz-roomD*.22,.35,.8,1.1,mats.wood);
+  addBox(parent,'Bed / table',cx-roomW*.25,.25,cz+roomD*.25,Math.min(1.6,roomW*.35),.35,1.5,mats.sofa);
+}
+function clearHouse(){if(houseGroup){scene.remove(houseGroup);houseGroup.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});}wallMeshes=[];}
+function buildHouse(){
+  setMaterials(); clearHouse();
+  houseGroup=new THREE.Group();scene.add(houseGroup);
+  const W=Math.max(4,Math.min(40,Number($('houseW').value)||12));
+  const D=Math.max(4,Math.min(40,Number($('houseD').value)||10));
+  const H=Math.max(2.2,Math.min(5,Number($('wallH').value)||3));
+  const T=Math.max(.1,Math.min(.5,Number($('wallT').value)||.2));
+  const type=$('layoutType').value;
+  floor=addBox(houseGroup,'Floor',0,-.12,0,W,.24,D,mats.floor,false);
+  // Outer walls as separated runs with generous gaps approximating doors; ceiling omitted for navigation.
+  const wallMat=mats.wall, halfW=W/2, halfD=D/2;
+  const addWall=(name,x,z,sx,sz)=>{const m=addBox(houseGroup,name,x,H/2,z,sx,H,sz,wallMat);wallMeshes.push(m);};
+  addWall('North exterior wall',0, -halfD, W,T);
+  addWall('South exterior wall',0, halfD, W,T);
+  addWall('West exterior wall',-halfW,0,T,D);
+  addWall('East exterior wall',halfW,0,T,D);
+  if(type==='family'){
+    addWall('Central divider',0,0,T,D*.68);
+    addWall('Cross divider left',-W*.25,-D*.16,W*.48,T);
+    addWall('Cross divider right',W*.25,D*.2,W*.48,T);
+  } else if(type==='open'){
+    addWall('Bedroom divider',W*.17,-D*.2,T,D*.52);
+    addWall('Rear divider',-W*.17,-D*.31,W*.33,T);
+  } else {
+    addWall('Compact divider',0,-D*.14,T,D*.5);
+    addWall('Compact cross divider',W*.2,D*.17,W*.6,T);
+  }
+  // Subtle floor grid / room accents
+  const grid=new THREE.GridHelper(Math.max(W,D)*1.6,Math.max(W,D)*2,0x8c9aa6,0xb6c0c8);
+  grid.position.y=.005;houseGroup.add(grid);
+  const roomZones= type==='family'
+    ? [{x:-W*.25,z:-D*.25,w:W*.43,d:D*.35},{x:W*.25,z:-D*.25,w:W*.43,d:D*.35},{x:-W*.25,z:D*.25,w:W*.43,d:D*.35},{x:W*.25,z:D*.25,w:W*.43,d:D*.35}]
+    : type==='open'
+    ? [{x:-W*.23,z:D*.1,w:W*.4,d:D*.55},{x:W*.25,z:-D*.25,w:W*.35,d:D*.32}]
+    : [{x:-W*.22,z:-D*.22,w:W*.38,d:D*.32},{x:W*.22,z:D*.22,w:W*.38,d:D*.32}];
+  roomZones.forEach((r,i)=>{addFurniture(houseGroup,r.x,r.z,r.w,r.d);});
+  // Windows represented by pale panels on exterior walls
+  const glass= new THREE.MeshStandardMaterial({color:0x9bd4e8,roughness:.18,metalness:.15,transparent:true,opacity:.78});
+  const win1=new THREE.Mesh(new THREE.BoxGeometry(W*.18,1.0,.035),glass);win1.position.set(-W*.25,1.75,-halfD);houseGroup.add(win1);
+  const win2=new THREE.Mesh(new THREE.BoxGeometry(.035,1.0,D*.18),glass);win2.position.set(halfW,1.75,-D*.15);houseGroup.add(win2);
+  $('sceneDims').textContent=`${W} m × ${D} m · ceiling ${H} m`;
+  $('areaLabel').textContent=`${Math.round(W*D)} m²`;
+  $('sceneName').textContent=`${type==='family'?'Family home':type==='open'?'Open-plan home':'Compact home'} · Preview`;
+  // camera target and spawn position
+  if(camera){camera.position.set(0, H*.8, D*.33);camera.lookAt(0,H*.55,0);if(orbit){orbit.target.set(0,H*.45,0);orbit.update();}}
+  $('status').textContent='3D model ready · sample layout generated';
+  $('notice').style.display='none';
+  if(mode==='walk') setMode('overview');
+}
+function init(){
+  scene=new THREE.Scene();scene.background=new THREE.Color(0xdbe3e8);scene.fog=new THREE.Fog(0xdbe3e8,25,75);
+  camera=new THREE.PerspectiveCamera(65,viewport.clientWidth/viewport.clientHeight,.1,150);
+  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(viewport.clientWidth,viewport.clientHeight);
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+  viewport.appendChild(renderer.domElement);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x9ca7b0,2.0));
+  const sun=new THREE.DirectionalLight(0xfff1db,3.0);sun.position.set(-8,15,9);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+  orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.target.set(0,1.3,0);orbit.maxPolarAngle=Math.PI*.49;
+  pointer=new PointerLockControls(camera,renderer.domElement);
+  clock=new THREE.Clock();buildHouse();
+  renderer.setAnimationLoop(animate);
+  window.addEventListener('resize',resize);
+  renderer.domElement.addEventListener('click',()=>{if(mode==='walk'&&!pointer.isLocked)pointer.lock();});
+  pointer.addEventListener('lock',()=>{$('notice').style.display='none';});
+  pointer.addEventListener('unlock',()=>{if(mode==='walk')$('notice').style.display='block';});
+  window.addEventListener('keydown',e=>{keys[e.code]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();});
+  window.addEventListener('keyup',e=>keys[e.code]=false);
+  $('status').textContent='Ready · WebGL renderer active';
+}
+function resize(){if(!renderer)return;camera.aspect=viewport.clientWidth/viewport.clientHeight;camera.updateProjectionMatrix();renderer.setSize(viewport.clientWidth,viewport.clientHeight);}
+function setMode(next){
+  mode=next;
+  $('orbitMode').classList.toggle('active',mode==='overview');$('walkMode').classList.toggle('active',mode==='walk');
+  $('modeLabel').textContent=mode==='walk'?'First-person walkthrough':'3D overview';
+  $('modeHelp').textContent=mode==='walk'?'WASD to move · Mouse to look · Esc to exit':'Drag to orbit · Scroll to zoom';
+  orbit.enabled=mode==='overview';
+  if(mode==='walk'){
+    const H=Number($('wallH').value)||3,D=Number($('houseD').value)||10;
+    camera.position.set(0,Math.min(1.7,H*.58),D*.32);
+    camera.rotation.set(0,0,0);
+    $('notice').style.display='block';$('notice').innerHTML='Click inside the scene to begin walking.<br><span style="font-size:11px;color:#bdc8d4">WASD · Mouse look · Esc to exit</span>';
+  }else{if(pointer.isLocked)pointer.unlock();$('notice').style.display='none';camera.position.set(0,5,Math.max(10,Number($('houseD').value)*1.35));orbit.target.set(0,1,0);orbit.update();}
+}
+function animate(){
+  const dt=Math.min(clock.getDelta(),.05);
+  if(mode==='walk'&&pointer.isLocked){
+    const speed=4*dt;
+    if(keys.KeyW||keys.ArrowUp)pointer.moveForward(speed);
+    if(keys.KeyS||keys.ArrowDown)pointer.moveForward(-speed);
+    if(keys.KeyA||keys.ArrowLeft)pointer.moveRight(-speed);
+    if(keys.KeyD||keys.ArrowRight)pointer.moveRight(speed);
+    camera.position.y=Math.min(1.7,Math.max(1.25,(Number($('wallH').value)||3)*.58));
+  } else if(mode==='overview') orbit.update();
+  renderer.render(scene,camera);
+}
+$('buildBtn').addEventListener('click',buildHouse);
+$('walkBtn').addEventListener('click',()=>setMode('walk'));
+$('tourTopBtn').addEventListener('click',()=>setMode('walk'));
+$('view3dBtn').addEventListener('click',()=>setMode('overview'));
+$('orbitMode').addEventListener('click',()=>setMode('overview'));
+$('walkMode').addEventListener('click',()=>setMode('walk'));
+$('resetBtn').addEventListener('click',()=>{if(mode==='walk'){camera.position.set(0,1.6,(Number($('houseD').value)||10)*.32);camera.rotation.set(0,0,0);}else setMode('overview');});
+$('planFile').addEventListener('change',e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  $('fileInfo').textContent=`Selected: ${file.name} · ${(file.size/1024/1024).toFixed(2)} MB`;
+  const preview=$('planPreview');
+  if(file.type.startsWith('image/')){preview.src=URL.createObjectURL(file);preview.style.display='block';}
+  else{preview.style.display='none';$('fileInfo').textContent+= ' · PDF selected; preview is not rendered in this starter.';}
+});
+try{init();}catch(err){console.error(err);$('notice').style.display='block';$('notice').textContent='Could not initialise 3D. Please use a modern browser with WebGL enabled.';$('status').textContent='Renderer error — check browser WebGL support.';}
+</script>
+</body>
+</html>
